@@ -7,6 +7,7 @@ from pymeasure.instruments.keithley import Keithley2450
 from SRS_SIM970 import SRSSIM970
 from ZauxdllTest import GBIOConnect
 from demo import Ui_MainWindow
+from system_monitor import get_monitor, monitor_method
 
 # 定义你要添加的库文件路径
 custom_lib_path = "c:\\users\\administrator\\appdata\\local\\programs\\python\\python37\\lib\\site-packages"
@@ -260,7 +261,9 @@ class SerialConnectionThread(QThread):
     def __init__(self, port_com):
         super().__init__()
         SerialConnectionThread.port_com = port_com
+        self.setObjectName(f"SerialConnectionThread-COM{port_com}")
 
+    @monitor_method
     def run(self):
         try:
             self.connected.emit(True, f"连接成功，端口 {SerialConnectionThread.port_com}")
@@ -276,7 +279,9 @@ class NeedelConnectionThread(QThread):
     def __init__(self, port_number):
         super().__init__()
         NeedelConnectionThread.port_number = port_number
+        self.setObjectName(f"NeedelConnectionThread-COM{port_number}")
 
+    @monitor_method
     def run(self):
         try:
             bps = 115200
@@ -294,7 +299,9 @@ class RelayConnectionThread(QThread):
     def __init__(self, port_number):
         super().__init__()
         self.port_number = port_number
+        self.setObjectName(f"RelayConnectionThread-COM{port_number}")
 
+    @monitor_method
     def run(self):
         try:
             serialPort = self.port_number
@@ -314,7 +321,9 @@ class SIM928ConnectionThread(QThread):
         super().__init__()
         self.address = address
         self.address_input = address_input
+        self.setObjectName(f"SIM928ConnectionThread-{address}")
 
+    @monitor_method
     def run(self):
         try:
             SIM928ConnectionThread.anc = Keithley2450(self.address)
@@ -336,7 +345,9 @@ class SIM970ConnectionThread(QThread):
         super().__init__()
         self.port_number = port_number
         self.GBIO_number = GBIO_number
+        self.setObjectName(f"SIM970ConnectionThread-{GBIO_number}-{port_number}")
 
+    @monitor_method
     def run(self):
         try:
             SIM970ConnectionThread.anc = SRSSIM970(self.port_number, self.GBIO_number)

@@ -11,6 +11,9 @@ import ctypes
 import random
 from ctypes import *
 
+# 导入监控模块
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from system_monitor import get_monitor, monitor_method
 
 from CameraConfig.CameraParams_const import MV_GIGE_DEVICE
 from CameraConfig.CameraParams_header import MVCC_INTVALUE_EX, MV_FRAME_OUT_INFO_EX, \
@@ -158,6 +161,7 @@ class CameraOperation:
         self.exposure_time = exposure_time
         self.gain = gain
         self.buf_lock = threading.Lock()  # 取图和存图的buffer锁
+        self.camera_lock = threading.Lock()  # 🔒 相机访问锁（防止多线程竞争）
         # 目标抓取间隔（秒），用于轻微节流，默认约16FPS
         self.target_grab_interval = 0.06
         # 使用事件进行线程安全退出
@@ -218,6 +222,7 @@ class CameraOperation:
             return MV_OK
 
     # 开始取图
+    @monitor_method
     def Start_grabbing(self, winHandle):
         if not self.b_start_grabbing and self.b_open_device:
             self.b_exit = False
@@ -228,7 +233,12 @@ class CameraOperation:
             self.b_start_grabbing = True
             print("start grabbing successfully!")
             try:
-                self.h_thread_handle = threading.Thread(target=CameraOperation.Work_thread, args=(self, winHandle), daemon=True)
+                self.h_thread_handle = threading.Thread(
+                    target=CameraOperation.Work_thread, 
+                    args=(self, winHandle), 
+                    daemon=True,
+                    name="CameraWorkThread"
+                )
                 self.h_thread_handle.start()
                 self.b_thread_closed = True
             finally:
@@ -238,6 +248,7 @@ class CameraOperation:
         return MV_E_CALLORDER
 
     # 停止取图（改为协作式停止）
+    @monitor_method
     def Stop_grabbing(self):
         if self.b_start_grabbing and self.b_open_device:
             # 通知线程退出并等待
@@ -376,7 +387,9 @@ class CameraOperation:
                 return
 
         while not self.b_exit and not self._stop_event.is_set():
-            ret = self.obj_cam.MV_CC_GetOneFrameTimeout(self.buf_grab_image, self.buf_grab_image_size, stFrameInfo, 2000)
+            # 🔒 加锁保护相机访问，防止多线程竞争
+            with self.camera_lock:
+                ret = self.obj_cam.MV_CC_GetOneFrameTimeout(self.buf_grab_image, self.buf_grab_image_size, stFrameInfo, 2000)
 
             if ret == MV_OK:
                 consecutive_errors = 0
@@ -400,9 +413,29 @@ class CameraOperation:
             else:
                 consecutive_errors += 1
                 error_code = To_hex_str(ret)
-                print(f"获取帧失败, ret = {error_code}, 连续错误次数: {consecutive_errors}")
+                print(f"⚠️ 获取帧失败, ret = {error_code}, 连续错误次数: {consecutive_errors}")
+                
+                # 🔧 针对缓冲区错误的特殊处理
+                if ret == 0x80000007:  # 缓冲区相关错误
+                    print(f"⚠️ 检测到缓冲区错误，尝试清理并重置...")
+                    with self.buf_lock:
+                        # 清理可能损坏的缓冲区
+                        self.buf_grab_image = None
+                        self.buf_grab_image_size = 0
+                        self.buf_save_image = None
+                        self.n_save_image_size = 0
+                    time.sleep(0.2)
+                    # 尝试重新分配缓冲区
+                    try:
+                        self.buf_grab_image = (c_ubyte * NeedBufSize)()
+                        self.buf_grab_image_size = NeedBufSize
+                        print("✓ 缓冲区重置成功")
+                        consecutive_errors = 0  # 重置错误计数
+                    except:
+                        print("✗ 缓冲区重置失败")
+                        
                 if consecutive_errors >= max_consecutive_errors:
-                    print("连续错误过多，抓图线程退出")
+                    print("⛔ 连续错误过多，抓图线程退出")
                     break
 
         # 线程即将退出

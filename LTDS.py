@@ -97,6 +97,7 @@ def WhileMove(direction,indicatorLight,equipment=0,distance=1000):
         voltage = '100'
 
     directionArray = [[2,3,1],[6,5,4]]
+    # 初始化串口命令
     with SerialLock.serial_lock:
         indicatorLight.setStyleSheet(MainPage.MainPage1.get_stylesheet(True))
         anc = NeedelConnectionThread.anc
@@ -107,50 +108,65 @@ def WhileMove(direction,indicatorLight,equipment=0,distance=1000):
         anc.write('[ch5:0]'.encode())
         anc.write('[ch6:0]'.encode())
         time.sleep(0.1)
-        # distance = min(1000,distance)
-        if direction == 0 or direction == 1:
+    
+    # distance = min(1000,distance)
+    if direction == 0 or direction == 1:
+        with SerialLock.serial_lock:
             anc.write( ('[ch'+ str(directionArray[equipment][0])+':1]').encode())
             anc.write('[cap:013nF]'.encode())
             anc.write(('[volt:+'+voltage+'V]').encode())
             anc.write(('[freq:+0'+frequencyXY+'Hz]').encode())
             time.sleep(0.1)
-            num_str = '[-:0000' if direction ==0 else '[+:0000'
-            while StopClass.stop_num == 0:
+        
+        num_str = '[-:0000' if direction ==0 else '[+:0000'
+        while StopClass.stop_num == 0:
+            # 🔒 每次写入时加锁，避免长时间持锁
+            with SerialLock.serial_lock:
                 anc.write((num_str + str(distance) + '] ').encode())  # +-方向
-                time.sleep(0.1)
-        elif direction == 2 or direction == 3:
+            time.sleep(0.1)  # 在锁外sleep
+    
+    elif direction == 2 or direction == 3:
+        with SerialLock.serial_lock:
             anc.write( ('[ch'+ str(directionArray[equipment][1])+':1]').encode())
             anc.write('[cap:013nF]'.encode())
             anc.write(('[volt:+'+voltage+'V]').encode())
             anc.write(('[freq:+0'+frequencyXY+'Hz]').encode())
             time.sleep(0.1)
-            num_str1 = '[+:0000' if direction == 2 else '[-:0000'
-            num_str2 = '[-:0000' if direction == 2 else '[+:0000'
-            while StopClass.stop_num == 0:
+        
+        num_str1 = '[+:0000' if direction == 2 else '[-:0000'
+        num_str2 = '[-:0000' if direction == 2 else '[+:0000'
+        while StopClass.stop_num == 0:
+            # 🔒 每次写入时加锁，避免长时间持锁
+            with SerialLock.serial_lock:
                 if equipment==1:
                     anc.write((num_str1 + str(distance) + '] ').encode())  # +-方向
                 else :
                     anc.write((num_str2 + str(distance) + '] ').encode())  # +-方向
-                time.sleep(0.1)
-        #Z轴, 4按压,5抬升
-        elif  direction == 4 or direction == 5:
+            time.sleep(0.1)  # 在锁外sleep
+    
+    #Z轴, 4按压,5抬升
+    elif direction == 4 or direction == 5:
+        with SerialLock.serial_lock:
             anc.write(('[ch' + str(directionArray[equipment][2]) + ':1]').encode())
             anc.write('[cap:013nF]'.encode())
             anc.write(('[volt:+'+voltage+'V]').encode())
             anc.write(('[freq:+0'+frequencyZ+'Hz]').encode())
             time.sleep(0.2)
-            num_str = '[+:0000' if direction == 4 else '[-:0000'
-            while StopClass.stop_num == 0:
+        
+        num_str = '[+:0000' if direction == 4 else '[-:0000'
+        while StopClass.stop_num == 0:
+            # 🔒 每次写入时加锁，避免长时间持锁
+            with SerialLock.serial_lock:
                 anc.write((num_str + str(distance) + '] ').encode())  # +-方向
-                time.sleep(0.2)
-                keithley = SIM928ConnectionThread.anc
-                current = keithley.current
-                print(current)
+            time.sleep(0.2)  # 在锁外sleep
+            keithley = SIM928ConnectionThread.anc
+            current = keithley.current
+            print(current)
 
-
-        StopClass.stop_num = 0
-        locationClass.locationX, locationClass.locationY, locationClass.locationZ = getPosition()
-        indicatorLight.setStyleSheet(MainPage.MainPage1.get_stylesheet(False))
+    # 🔄 无论哪个分支，结束后都要重置 stop_num
+    StopClass.stop_num = 0
+    locationClass.locationX, locationClass.locationY, locationClass.locationZ = getPosition()
+    indicatorLight.setStyleSheet(MainPage.MainPage1.get_stylesheet(False))
 
 def voltage_and_frequency(xv,yv,xf,yf):
     anc = NeedelConnectionThread.anc

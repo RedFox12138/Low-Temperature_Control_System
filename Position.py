@@ -178,7 +178,7 @@ def move(axis, distance, flag,Z_adjust=False):
         ser4.write(('[volt:+'+voltage+'V]').encode())
 
         # 根据flag决定频率（微调500Hz，非微调800Hz）
-        freq = '+0500Hz' if Z_adjust else '+0800Hz'
+        freq = '+0700Hz' if Z_adjust else '+1000Hz'
         ser4.write(f'[freq:{freq}]'.encode())
         ser4.write(('[+:0000' + str(distance) + '] ').encode())
 

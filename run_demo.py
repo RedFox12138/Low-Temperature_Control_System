@@ -1,4 +1,5 @@
 import sys
+import traceback
 
 from locationClass import locationClass
 from StopClass import StopClass
@@ -32,8 +33,11 @@ import faulthandler
 import tracemalloc
 import os
 
+# 导入增强的系统监控模块
+from system_monitor import get_monitor, monitor_thread, safe_thread_start
+
 # 将crash堆栈输出到文件，辅助定位原生崩溃（如0xC0000374）
-_crash_log_file = open("faulthandler.log", "w", buffering=1, encoding="utf-8")
+_crash_log_file = open("logs/faulthandler.log", "w", buffering=1, encoding="utf-8")
 faulthandler.enable(file=_crash_log_file, all_threads=True)
 
 # 通过环境变量控制是否启用内存跟踪，避免常态运行的性能影响
@@ -156,6 +160,12 @@ class UsingTest(QMainWindow, Ui_MainWindow):
 
 # 程序入口文件
 if __name__ == '__main__':
+    # ========== 启动系统监控 ==========
+    monitor = get_monitor()
+    monitor.start_monitoring(interval=5)  # 每5秒记录一次系统状态
+    monitor.logger.info("程序启动")
+    # ===================================
+    
     app = QApplication(sys.argv)  # 创建窗口程序
     app.setWindowIcon(QIcon('kupai.png'))  # 设置应用程序图标
 
@@ -187,4 +197,14 @@ if __name__ == '__main__':
     atexit.register(_cleanup)
 
     win.show()
-    sys.exit(app.exec())
+    
+    try:
+        exit_code = app.exec()
+        monitor.logger.info(f"程序正常退出，退出码: {exit_code}")
+        sys.exit(exit_code)
+    except Exception as e:
+        monitor.logger.critical(f"程序异常退出: {e}")
+        monitor.logger.critical(traceback.format_exc())
+        sys.exit(-1)
+    finally:
+        monitor.stop_monitoring()
