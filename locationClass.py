@@ -306,11 +306,19 @@ class locationClass(QMainWindow, Ui_MainWindow):
                     StopClass.stop_num=0
                     break
 
-                target_x, target_y = self.device_positions[i]
+                # 确保坐标值是浮点数
+                try:
+                    target_x, target_y = self.device_positions[i]
+                    target_x = float(target_x)
+                    target_y = float(target_y)
+                except (ValueError, TypeError) as e:
+                    logger.log(f'坐标转换失败: 索引={i}, 原始值={self.device_positions[i]}, 错误={e}')
+                    continue
+                
                 PadName = self.device_names[i] if getattr(self, 'device_names', None) and i < len(self.device_names) else ''
                 logger.log(f'探针已经移动移动到目标点: x={target_x}, y={target_y}，准备模板匹配移动')
                 move_to_target(target_x, target_y,self.indicator)
-                time.sleep(4)
+                time.sleep(2)
 
                 #这里的template_error如果是true，说明模板匹配有问题，这个点就直接跳过，不匹配了
                 template_error = self.mainpage1.match_and_move()
@@ -519,15 +527,19 @@ class locationClass(QMainWindow, Ui_MainWindow):
         if event.xdata is None or event.ydata is None:
             return
 
-        click_x, click_y = event.xdata, event.ydata
-        nearest_index = self.find_nearest_index(click_x, click_y)
-        target_x, target_y = self.device_positions[nearest_index]
+        try:
+            click_x, click_y = float(event.xdata), float(event.ydata)
+            nearest_index = self.find_nearest_index(click_x, click_y)
+            target_x, target_y = self.device_positions[nearest_index]
+            target_x, target_y = float(target_x), float(target_y)
 
-        logger.log(f"地图点击：移动到目标点 ({target_x:.4f}, {target_y:.4f})")
+            logger.log(f"地图点击：移动到目标点 ({target_x:.4f}, {target_y:.4f})")
 
-        # 使用持久化的线程池提交任务，避免重复创建线程带来的开销
-        future = self.move_executor.submit(move_to_target, target_x, target_y, self.indicator)
-        future.add_done_callback(self.on_move_complete)
+            # 使用持久化的线程池提交任务，避免重复创建线程带来的开销
+            future = self.move_executor.submit(move_to_target, target_x, target_y, self.indicator)
+            future.add_done_callback(self.on_move_complete)
+        except (ValueError, TypeError) as e:
+            logger.log(f"on_click 坐标转换失败: 错误={e}")
 
 
     def on_move_complete(self,future):
@@ -561,9 +573,17 @@ class locationClass(QMainWindow, Ui_MainWindow):
 
     # 找到距离当前位置最近的点的索引
     def find_nearest_index(self,current_x, current_y):
-        distances = [np.sqrt((current_x - pos[0])**2 + (current_y - pos[1])**2) for pos in self.device_positions]
-        nearest_index = np.argmin(distances)
-        return nearest_index
+        try:
+            # 确保输入是浮点数
+            current_x = float(current_x)
+            current_y = float(current_y)
+            # 计算距离时确保坐标转换为浮点数
+            distances = [np.sqrt((current_x - float(pos[0]))**2 + (current_y - float(pos[1]))**2) for pos in self.device_positions]
+            nearest_index = np.argmin(distances)
+            return nearest_index
+        except (ValueError, TypeError) as e:
+            logger.log(f"find_nearest_index 转换失败: current=({current_x}, {current_y}), 错误={e}")
+            return 0  # 返回第一个索引作为默认值
 
     def start_map_creation(self):
         # 在主线程中执行 CreateMap

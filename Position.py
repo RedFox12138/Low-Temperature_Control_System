@@ -25,45 +25,63 @@ def getPosition(Z_flag=False,Only_XY=False):
 
     if Z_flag is not True:
         # X轴坐标
-        anc.write('[ch3:1]'.encode())
-        time.sleep(0.2)
-        anc.write('[v?]'.encode())
-        anc.write('[read:pulse?]'.encode())
-        ret = anc.readline()
-        ret_str = ret.decode()
-        start_index = ret_str.find('[+') + 2
-        end_index = ret_str.find('v]')
-        voltage_str = ret_str[start_index:end_index]
-        distance = float(voltage_str)  # 浮点型
-        x_distance = (1 - distance / 2.5) * 10.92 - 5
-        time.sleep(0.1)
+        try:
+            anc.write('[ch3:1]'.encode())
+            time.sleep(0.2)
+            anc.write('[v?]'.encode())
+            anc.write('[read:pulse?]'.encode())
+            ret = anc.readline()
+            ret_str = ret.decode()
+            start_index = ret_str.find('[+') + 2
+            end_index = ret_str.find('v]')
+            if start_index > 1 and end_index > start_index:
+                voltage_str = ret_str[start_index:end_index].strip()
+                if voltage_str:  # 确保不是空字符串
+                    distance = float(voltage_str)  # 浮点型
+                    x_distance = (1 - distance / 2.5) * 10.92 - 5
+            time.sleep(0.1)
+        except (ValueError, IndexError) as e:
+            print(f"获取X轴位置失败: {e}, 返回数据: {ret_str if 'ret_str' in locals() else 'N/A'}")
+            x_distance = 0
 
-        anc.write('[ch2:1]'.encode())
-        time.sleep(0.2)
-        anc.write('[v?]'.encode())
-        anc.write('[read:pulse?]'.encode())
-        ret = anc.readline()
-        ret_str = ret.decode()
-        start_index = ret_str.find('[+') + 2
-        end_index = ret_str.find('v]')
-        voltage_str = ret_str[start_index:end_index]
-        distance = float(voltage_str)  # 浮点型
-        y_distance = (1 - distance / 2.5) * 10.92 - 5
-        time.sleep(0.1)
+        try:
+            anc.write('[ch2:1]'.encode())
+            time.sleep(0.2)
+            anc.write('[v?]'.encode())
+            anc.write('[read:pulse?]'.encode())
+            ret = anc.readline()
+            ret_str = ret.decode()
+            start_index = ret_str.find('[+') + 2
+            end_index = ret_str.find('v]')
+            if start_index > 1 and end_index > start_index:
+                voltage_str = ret_str[start_index:end_index].strip()
+                if voltage_str:  # 确保不是空字符串
+                    distance = float(voltage_str)  # 浮点型
+                    y_distance = (1 - distance / 2.5) * 10.92 - 5
+            time.sleep(0.1)
+        except (ValueError, IndexError) as e:
+            print(f"获取Y轴位置失败: {e}, 返回数据: {ret_str if 'ret_str' in locals() else 'N/A'}")
+            y_distance = 0
 
     if Only_XY is not True:
-        anc.write('[ch1:1]'.encode())
-        time.sleep(0.2)
-        anc.write('[v?]'.encode())
-        anc.write('[read:pulse?]'.encode())
-        ret = anc.readline()
-        ret_str = ret.decode()
-        start_index = ret_str.find('[+') + 2
-        end_index = ret_str.find('v]')
-        voltage_str = ret_str[start_index:end_index]
-        distance = float(voltage_str)  # 浮点型
-        z_distance = (1 - distance / 2.5) * 10.92 - 5
-        time.sleep(0.1)
+        try:
+            anc.write('[ch1:1]'.encode())
+            time.sleep(0.2)
+            anc.write('[v?]'.encode())
+            anc.write('[read:pulse?]'.encode())
+            ret = anc.readline()
+            ret_str = ret.decode()
+            start_index = ret_str.find('[+') + 2
+            end_index = ret_str.find('v]')
+            if start_index > 1 and end_index > start_index:
+                voltage_str = ret_str[start_index:end_index].strip()
+                if voltage_str:  # 确保不是空字符串
+                    distance = float(voltage_str)  # 浮点型
+                    z_distance = (1 - distance / 2.5) * 10.92 - 5
+            time.sleep(0.1)
+        except (ValueError, IndexError) as e:
+            print(f"获取Z轴位置失败: {e}, 返回数据: {ret_str if 'ret_str' in locals() else 'N/A'}")
+            z_distance = 0
 
     return round(x_distance,4),round(y_distance,4),round(z_distance,6)
 
@@ -132,11 +150,11 @@ def move_to_Z(z,indicatorLight,Voltage_flag=False):
 def move(axis, distance, flag,Z_adjust=False):
     distance = round(distance)
     ser4 = NeedelConnectionThread.anc
-    move_time = distance/3000 #初始为1000
+    move_time = distance/8000 #初始为10000
 
     # 根据全局配置选择参数
     if is_low():
-        frequencyXY = '1000'
+        frequencyXY = '1200'
         frequencyZ = '1000'
         voltage = '200'
     else:

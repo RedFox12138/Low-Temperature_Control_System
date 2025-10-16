@@ -1230,7 +1230,7 @@ class MainPage1(QMainWindow, Ui_MainWindow):
         if is_low():
             distance_weight = 50  # 低温
             error = 6
-            sleep_time = 0.5
+            sleep_time = 0.2 #这里本来是0.5，但是为了加快速度改成0.2
         else:
             distance_weight = 10  # 常温
             error = 10
