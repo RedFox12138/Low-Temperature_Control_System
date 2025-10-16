@@ -132,7 +132,7 @@ def move_to_Z(z,indicatorLight,Voltage_flag=False):
 def move(axis, distance, flag,Z_adjust=False):
     distance = round(distance)
     ser4 = NeedelConnectionThread.anc
-    move_time = distance/10000 #初始为0.3
+    move_time = distance/3000 #初始为1000
 
     # 根据全局配置选择参数
     if is_low():
