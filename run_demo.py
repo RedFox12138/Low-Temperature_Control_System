@@ -1,6 +1,6 @@
 import sys
 
-from QTneedle.QTneedle.locationClass import locationClass
+from locationClass import locationClass
 from StopClass import StopClass
 
 # 定义你要添加的库文件路径

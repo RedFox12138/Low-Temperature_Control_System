@@ -1,13 +1,13 @@
 import time
 
 
-from QTneedle.QTneedle.SerialLock import SerialLock
+from SerialLock import SerialLock
 from SerialPage import NeedelConnectionThread, SIM928ConnectionThread
 import sys
 
 from StopClass import StopClass
 # 导入全局温度配置
-from QTneedle.QTneedle.TemperatureConfig import is_low
+from TemperatureConfig import is_low
 
 # 定义你要添加的库文件路径
 custom_lib_path = "c:\\users\\administrator\\appdata\\local\\programs\\python\\python37\\lib\\site-packages"
@@ -70,7 +70,7 @@ def getPosition(Z_flag=False,Only_XY=False):
 def move_to_Z(z,indicatorLight,Voltage_flag=False):
     with SerialLock.serial_lock:
         _, _, z_current = getPosition(Z_flag=True)
-    from QTneedle.QTneedle import MainPage
+    import MainPage
     indicatorLight.setStyleSheet(MainPage.MainPage1.get_stylesheet(True))
     # 定义不同阶段的阈值和参数
     FAR_THRESHOLD = 0.02  # 20微米以上为远距离移动
@@ -220,7 +220,7 @@ def move_to_target(x, y,indicatorLight):
         XY_k_2 = 3000
 
     step_per_unit = 0.06  # 假设每 0.06 单位对应 100 步
-    from QTneedle.QTneedle import MainPage
+    import MainPage
     indicatorLight.setStyleSheet(MainPage.MainPage1.get_stylesheet(True))
     with SerialLock.serial_lock:
         x_current, y_current,_ = getPosition(Only_XY=True)

@@ -6,13 +6,13 @@ import MainPage
 from ANC300 import Positioner
 import math
 
-from QTneedle.QTneedle.Position import getPosition
-from QTneedle.QTneedle.SerialLock import SerialLock
-from QTneedle.QTneedle.locationClass import locationClass
+from Position import getPosition
+from SerialLock import SerialLock
+from locationClass import locationClass
 from SerialPage import NeedelConnectionThread, SIM928ConnectionThread
 from StopClass import StopClass
 # 导入全局温度配置
-from QTneedle.QTneedle.TemperatureConfig import is_low
+from TemperatureConfig import is_low
 
 ax = {'x':1,'y':2,'z':3,'x2':4,'y2':5,'z2':6}
 def ReturnNeedleMove(direction,distance,indicatorLight,isclick=False,flag=False,equipment=0):

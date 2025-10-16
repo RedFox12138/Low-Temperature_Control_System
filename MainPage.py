@@ -2,9 +2,9 @@ import os
 import subprocess
 import sys
 
-from QTneedle.QTneedle.CameraConfig.CameraParams_const import MV_GIGE_DEVICE, MV_USB_DEVICE
-from QTneedle.QTneedle.DailyLogger import DailyLogger
-from QTneedle.QTneedle.Load_Mat import load_and_plot_latest_mat_signals
+from CameraConfig.CameraParams_const import MV_GIGE_DEVICE, MV_USB_DEVICE
+from DailyLogger import DailyLogger
+from Load_Mat import load_and_plot_latest_mat_signals
 from StopClass import StopClass
 
 # 定义你要添加的库文件路径
@@ -33,7 +33,7 @@ from Microscope import ReturnZauxdll
 from SerialPage import SIM928ConnectionThread, RelayConnectionThread, NeedelConnectionThread
 from demo import Ui_MainWindow
 # 导入全局温度配置
-from QTneedle.QTneedle.TemperatureConfig import set_low, set_high, is_low
+from TemperatureConfig import set_low, set_high, is_low
 
 
 def handle_coordinates(x, y):
