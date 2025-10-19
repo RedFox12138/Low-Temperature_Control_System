@@ -338,6 +338,10 @@ class MainPage1(QMainWindow, Ui_MainWindow):
         try:
             self._frame_idx += 1
 
+            # 🚩 检查是否正在重置缓冲区
+            if hasattr(MainPage1.obj_cam_operation, 'is_resetting') and MainPage1.obj_cam_operation.is_resetting:
+                return None  # 等待重置完成
+
             stFrameInfo = MainPage1.obj_cam_operation.st_frame_info
             if MainPage1.obj_cam_operation.buf_grab_image_size > 0 and stFrameInfo:
                 if stFrameInfo.nWidth > 0 and stFrameInfo.nHeight > 0 and stFrameInfo.nFrameLen > 0:
@@ -347,20 +351,36 @@ class MainPage1(QMainWindow, Ui_MainWindow):
                         # 从保存缓冲区复制数据，使用锁防止抓图线程写入过程中发生竞态
                         with MainPage1.obj_cam_operation.buf_lock:
                             st_info = MainPage1.obj_cam_operation.st_frame_info
-                            if not st_info or st_info.nFrameLen <= 0:
-                                return
-                            data = np.frombuffer(MainPage1.obj_cam_operation.buf_save_image, dtype=np.uint8,
-                                                 count=st_info.nFrameLen).copy()
+                            buf = MainPage1.obj_cam_operation.buf_save_image
+                            
+                            # ✅ 验证缓冲区有效性
+                            if not st_info or st_info.nFrameLen <= 0 or buf is None:
+                                return None
+                            if st_info.nWidth <= 0 or st_info.nHeight <= 0:
+                                return None
+                            
+                            try:
+                                data = np.frombuffer(buf, dtype=np.uint8, count=st_info.nFrameLen).copy()
+                            except Exception as e:
+                                print(f"读取帧缓冲区失败: {e}")
+                                return None
+                                
                             width = st_info.nWidth
                             height = st_info.nHeight
 
                         # 解码 Bayer -> RGB（这一步较重，必要时可进一步降低分辨率）
-                        frame = data.reshape((height, width))
-                        rgb = cv2.cvtColor(frame, cv2.COLOR_BayerBG2RGB)
+                        try:
+                            frame = data.reshape((height, width))
+                            rgb = cv2.cvtColor(frame, cv2.COLOR_BayerBG2RGB)
 
-                        # 单次resize到目标显示尺寸，避免二次缩放
-                        target_size = (851, 851)
-                        resized = cv2.resize(rgb, target_size, interpolation=cv2.INTER_LINEAR)
+                            # 单次resize到目标显示尺寸，避免二次缩放
+                            target_size = (851, 851)
+                            resized = cv2.resize(rgb, target_size, interpolation=cv2.INTER_LINEAR)
+                        finally:
+                            # 🔴 及时释放临时图像数据
+                            del data
+                            if 'frame' in locals():
+                                del frame
 
                         # 写入共享帧前加锁
                         with self._frame_lock:
@@ -377,7 +397,7 @@ class MainPage1(QMainWindow, Ui_MainWindow):
                             dia_file = 'dia' + str(MainPage1.equipment) + '.txt'
                             cur_mtime = os.path.getmtime(dia_file) if os.path.exists(dia_file) else None
                             if cur_mtime and cur_mtime != self._dia_cache['mtime']:
-                                with open(dia_file, 'r') as file:
+                                with open(dia_file, 'r', encoding='utf-8') as file:
                                     line = file.readline().strip()
                                     numbers = line.split(',') if line else []
                                     if len(numbers) >= 2:
@@ -470,9 +490,35 @@ class MainPage1(QMainWindow, Ui_MainWindow):
             print(f"保存图片失败: {e}")
 
     def match_and_move(self):
+        # 🚩 检查是否正在重置缓冲区
+        if hasattr(MainPage1.obj_cam_operation, 'is_resetting') and MainPage1.obj_cam_operation.is_resetting:
+            return False  # 等待重置完成
+        
+        # 🔴 检查内存压力
+        import psutil
+        import gc
+        try:
+            mem_mb = psutil.Process().memory_info().rss / 1024 / 1024
+            if mem_mb > 600:  # 超过 600MB
+                print(f"[WARNING] 内存压力过大 ({mem_mb:.0f}MB)，跳过模板匹配")
+                gc.collect()  # 强制垃圾回收
+                return False
+        except Exception as e:
+            print(f"[WARNING] 内存检查失败: {e}")
+        
         # 获取当前帧并进行模板匹配
         video = self.update_frame()
-        matched_centers = match_device_templates(video)
+        
+        # 如果获取帧失败，返回False
+        if video is None:
+            return False
+        
+        try:
+            matched_centers = match_device_templates(video)
+        finally:
+            # 🔴 立即释放大图像对象
+            del video
+            gc.collect()  # 强制垃圾回收
 
         # 如果没有匹配点，直接返回True
         if not matched_centers:
@@ -700,7 +746,7 @@ class MainPage1(QMainWindow, Ui_MainWindow):
 
         cv2.destroyWindow("Select Needle Template")
 
-        with open('dia' + str(MainPage1.equipment) + '.txt', 'w') as f:
+        with open('dia' + str(MainPage1.equipment) + '.txt', 'w', encoding='utf-8') as f:
             f.write(f"{self.x_dia},{self.y_dia}")
 
         print(f"偏移量已保存: x_dia={self.x_dia}, y_dia={self.y_dia}")
@@ -782,7 +828,7 @@ class MainPage1(QMainWindow, Ui_MainWindow):
         print(f"偏移量计算：pad中心({pad_center_x},{pad_center_y}) -> 参考点({mouseX},{mouseY}) = ({x_dia},{y_dia})")
 
         # 保存偏移量
-        with open('Paddia.txt', 'w') as f:
+        with open('Paddia.txt', 'w', encoding='utf-8') as f:
             f.write(f"{x_dia},{y_dia}")
             f.flush()  # 强制刷新缓冲区
             os.fsync(f.fileno())  # 强制同步到磁盘

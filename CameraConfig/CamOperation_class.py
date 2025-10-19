@@ -11,6 +11,8 @@ import ctypes
 import random
 from ctypes import *
 
+
+
 # 导入监控模块
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from system_monitor import get_monitor, monitor_method
@@ -162,6 +164,7 @@ class CameraOperation:
         self.gain = gain
         self.buf_lock = threading.Lock()  # 取图和存图的buffer锁
         self.camera_lock = threading.Lock()  # 🔒 相机访问锁（防止多线程竞争）
+        self.is_resetting = False  # 🚩 标记是否正在重置缓冲区（防止访问违规）
         # 目标抓取间隔（秒），用于轻微节流，默认约16FPS
         self.target_grab_interval = 0.06
         # 使用事件进行线程安全退出
@@ -372,7 +375,10 @@ class CameraOperation:
         if ret_temp != MV_OK:
             print(f"获取PayloadSize失败: {To_hex_str(ret_temp)}")
             return
-        NeedBufSize = int(stPayloadSize.nCurValue)
+        
+        # 🔴 增加缓冲区大小 (1.5倍) 以应对高负载
+        NeedBufSize = int(stPayloadSize.nCurValue * 1.5)
+        print(f"分配相机缓冲区大小: {NeedBufSize / 1024 / 1024:.2f}MB")
 
         consecutive_errors = 0
         max_consecutive_errors = 5  # 连续5次错误后退出线程，由上层决定是否重连
@@ -413,29 +419,43 @@ class CameraOperation:
             else:
                 consecutive_errors += 1
                 error_code = To_hex_str(ret)
-                print(f"⚠️ 获取帧失败, ret = {error_code}, 连续错误次数: {consecutive_errors}")
+                from MainPage import logger
+                logger.log(f"[WARNING] 获取帧失败, ret = {error_code}, 连续错误次数: {consecutive_errors}")
                 
                 # 🔧 针对缓冲区错误的特殊处理
                 if ret == 0x80000007:  # 缓冲区相关错误
-                    print(f"⚠️ 检测到缓冲区错误，尝试清理并重置...")
+                    logger.log(f"[WARNING] 检测到缓冲区错误(0x80000007)，准备重置...")
+                    
+                    # 设置重置标志，防止其他线程访问
+                    self.is_resetting = True
+                    logger.log("[INFO] 已设置重置标志，等待其他操作完成...")
+                    time.sleep(0.5)  # 等待其他线程完成当前操作
+                    
                     with self.buf_lock:
+                        logger.log("[INFO] 开始清理缓冲区...")
                         # 清理可能损坏的缓冲区
                         self.buf_grab_image = None
                         self.buf_grab_image_size = 0
                         self.buf_save_image = None
                         self.n_save_image_size = 0
+                        
+                        # 在锁内重新分配缓冲区（防止其他线程访问）
+                        try:
+                            time.sleep(0.1)  # 短暂等待，确保缓冲区完全释放
+                            self.buf_grab_image = (c_ubyte * NeedBufSize)()
+                            self.buf_grab_image_size = NeedBufSize
+                            logger.log("[OK] 缓冲区重置成功")
+                            consecutive_errors = 0  # 重置错误计数
+                        except Exception as e:
+                            logger.log(f"[FAIL] 缓冲区重置失败: {e}")
+                    
+                    # 重置完成后等待，然后清除标志
                     time.sleep(0.2)
-                    # 尝试重新分配缓冲区
-                    try:
-                        self.buf_grab_image = (c_ubyte * NeedBufSize)()
-                        self.buf_grab_image_size = NeedBufSize
-                        print("✓ 缓冲区重置成功")
-                        consecutive_errors = 0  # 重置错误计数
-                    except:
-                        print("✗ 缓冲区重置失败")
+                    self.is_resetting = False
+                    logger.log("[INFO] 缓冲区重置完成，恢复正常操作")
                         
                 if consecutive_errors >= max_consecutive_errors:
-                    print("⛔ 连续错误过多，抓图线程退出")
+                    logger.log("[ERROR] 连续错误过多，抓图线程退出")
                     break
 
         # 线程即将退出

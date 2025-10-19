@@ -197,7 +197,7 @@ def match_device_templates(video):
         return []
 
     try:
-        with open('Paddia.txt', 'r') as f:
+        with open('Paddia.txt', 'r', encoding='utf-8') as f:
             xdia, ydia = map(int, f.read().strip().split(','))
     except:
         xdia, ydia = 0, 0

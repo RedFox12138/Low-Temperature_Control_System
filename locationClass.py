@@ -320,11 +320,18 @@ class locationClass(QMainWindow, Ui_MainWindow):
                 move_to_target(target_x, target_y,self.indicator)
                 time.sleep(2)
 
-                #这里的template_error如果是true，说明模板匹配有问题，这个点就直接跳过，不匹配了
-                template_error = self.mainpage1.match_and_move()
-                if template_error:
-                    logger.log(f'该点模板匹配失败: x={target_x}, y={target_y}，跳过当前点的处理')
-                    continue
+                # 🔴 优化：每3个点才进行一次模板匹配（降低内存压力）
+                skip_template = (i % 2 != 0) and i > 0  # 跳过某些点的模板匹配
+                
+                if not skip_template:
+                    #这里的template_error如果是true，说明模板匹配有问题，这个点就直接跳过，不匹配了
+                    template_error = self.mainpage1.match_and_move()
+                    if template_error:
+                        logger.log(f'该点模板匹配失败: x={target_x}, y={target_y}，跳过当前点的处理')
+                        continue
+                else:
+                    logger.log(f'跳过模板匹配以降低内存压力（第{i}个点）')
+                    time.sleep(0.5)  # 简单等待以确保稳定
 
 
                 locationClass.locationX, locationClass.locationY,_ = getPosition()

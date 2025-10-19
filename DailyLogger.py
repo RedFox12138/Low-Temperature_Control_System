@@ -23,7 +23,7 @@ class DailyLogger:
 
         # 如果文件不存在，创建并写入文件头
         if not os.path.exists(self.current_log_file):
-            with open(self.current_log_file, 'w') as f:
+            with open(self.current_log_file, 'w', encoding='utf-8') as f:
                 f.write(f"=== Log file created at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===\n\n")
 
     # 以下方法保持不变...
@@ -42,9 +42,18 @@ class DailyLogger:
             level (str): 日志级别(INFO/WARNING/ERROR)
         """
         self._check_date_change()
-        with open(self.current_log_file, 'a') as f:
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            f.write(f"[{timestamp}] [{level}] - {action}\n")
+        try:
+            # 尝试用 UTF-8 追加写入
+            with open(self.current_log_file, 'a', encoding='utf-8', errors='ignore') as f:
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                # 将特殊字符替换为文本表示，避免编码问题
+                action_safe = action.replace('⚠️', '[WARNING]').replace('✓', '[OK]').replace('✗', '[FAIL]')
+                f.write(f"[{timestamp}] [{level}] - {action_safe}\n")
+                f.flush()  # 立即刷新
+        except Exception as e:
+            # 如果写入失败，至少打印到控制台
+            print(f"日志写入失败: {e}")
+            print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [{level}] - {action}")
 
     def get_today_logs(self):
         """获取当天日志内容
@@ -53,8 +62,29 @@ class DailyLogger:
             str: 当天所有日志内容
         """
         self._check_date_change()
-        with open(self.current_log_file, 'r') as f:
-            return f.read()
+        
+        # 尝试多种编码读取（兼容旧文件）
+        encodings = ['utf-8', 'gbk', 'gb2312', 'latin1']
+        
+        for encoding in encodings:
+            try:
+                with open(self.current_log_file, 'r', encoding=encoding) as f:
+                    return f.read()
+            except UnicodeDecodeError:
+                continue
+            except FileNotFoundError:
+                return "日志文件不存在"
+            except Exception as e:
+                continue
+        
+        # 如果所有编码都失败，使用二进制模式读取
+        try:
+            with open(self.current_log_file, 'rb') as f:
+                content = f.read()
+                # 尝试解码，忽略错误
+                return content.decode('utf-8', errors='ignore')
+        except Exception as e:
+            return f"读取日志失败: {e}"
 
     def get_log_file_path(self, date=None):
         """获取指定日期的日志文件路径
