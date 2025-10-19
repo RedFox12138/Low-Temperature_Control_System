@@ -1,0 +1,53 @@
+2025-10-16 19:38:54,849 - [MainThread] - SystemMonitor - INFO - ================================================================================
+2025-10-16 19:38:54,850 - [MainThread] - SystemMonitor - INFO - 系统监控初始化完成
+2025-10-16 19:38:54,850 - [MainThread] - SystemMonitor - INFO - 进程ID: 27288
+2025-10-16 19:38:54,850 - [MainThread] - SystemMonitor - INFO - Python版本: 3.12.0 (tags/v3.12.0:0fb18b0, Oct  2 2023, 13:03:39) [MSC v.1935 64 bit (AMD64)]
+2025-10-16 19:38:54,850 - [MainThread] - SystemMonitor - INFO - ================================================================================
+2025-10-16 19:38:54,855 - [SystemMonitor] - SystemMonitor - INFO - 内存: 157.14MB (0.97%) | 峰值: 157.14MB
+2025-10-16 19:38:54,855 - [MainThread] - SystemMonitor - INFO - 系统监控已启动 (监控间隔: 5秒)
+2025-10-16 19:38:54,855 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=2, QThread=0
+2025-10-16 19:38:54,855 - [MainThread] - SystemMonitor - INFO - 程序启动
+2025-10-16 19:38:54,855 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)']
+2025-10-16 19:38:57,100 - [MainThread] - SystemMonitor - DEBUG - 📍 CameraOperation.Start_grabbing 被调用
+2025-10-16 19:38:59,870 - [SystemMonitor] - SystemMonitor - INFO - 内存: 291.76MB (1.81%) | 峰值: 291.76MB
+2025-10-16 19:38:59,870 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=3, QThread=0
+2025-10-16 19:38:59,870 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)']
+2025-10-16 19:39:02,572 - [Dummy-11] - SystemMonitor - DEBUG - 📍 NeedelConnectionThread.run 被调用
+2025-10-16 19:39:04,871 - [SystemMonitor] - SystemMonitor - INFO - 内存: 294.89MB (1.83%) | 峰值: 294.89MB
+2025-10-16 19:39:04,872 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=5, QThread=0
+2025-10-16 19:39:04,872 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)', 'Thread-15 (WhileMove)(29156)']
+2025-10-16 19:39:09,888 - [SystemMonitor] - SystemMonitor - INFO - 内存: 321.80MB (2.00%) | 峰值: 321.80MB
+2025-10-16 19:39:09,888 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=5, QThread=0
+2025-10-16 19:39:09,889 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)', 'Thread-15 (WhileMove)(29156)']
+2025-10-16 19:39:14,900 - [SystemMonitor] - SystemMonitor - INFO - 内存: 321.73MB (2.00%) | 峰值: 321.80MB
+2025-10-16 19:39:14,900 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=4, QThread=0
+2025-10-16 19:39:14,900 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)']
+2025-10-16 19:39:19,908 - [SystemMonitor] - SystemMonitor - INFO - 内存: 326.55MB (2.03%) | 峰值: 326.55MB
+2025-10-16 19:39:19,908 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=5, QThread=0
+2025-10-16 19:39:19,908 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)', 'Thread-38 (WhileMove)(31192)']
+2025-10-16 19:39:24,919 - [SystemMonitor] - SystemMonitor - INFO - 内存: 327.29MB (2.03%) | 峰值: 327.29MB
+2025-10-16 19:39:24,919 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=5, QThread=0
+2025-10-16 19:39:24,919 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)', 'Thread-50 (WhileMove)(27416)']
+2025-10-16 19:39:29,927 - [SystemMonitor] - SystemMonitor - INFO - 内存: 321.55MB (1.99%) | 峰值: 327.29MB
+2025-10-16 19:39:29,927 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=4, QThread=0
+2025-10-16 19:39:29,927 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)']
+2025-10-16 19:39:34,942 - [SystemMonitor] - SystemMonitor - INFO - 内存: 326.94MB (2.03%) | 峰值: 327.29MB
+2025-10-16 19:39:34,942 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=5, QThread=0
+2025-10-16 19:39:34,942 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)', 'Thread-67 (WhileMove)(8264)']
+2025-10-16 19:39:39,951 - [SystemMonitor] - SystemMonitor - INFO - 内存: 375.87MB (2.33%) | 峰值: 375.87MB
+2025-10-16 19:39:39,951 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=5, QThread=0
+2025-10-16 19:39:39,952 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)', 'Thread-79 (WhileMove)(28040)']
+2025-10-16 19:39:44,954 - [SystemMonitor] - SystemMonitor - INFO - 内存: 409.10MB (2.54%) | 峰值: 409.10MB
+2025-10-16 19:39:44,954 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=5, QThread=0
+2025-10-16 19:39:44,954 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)', 'Thread-91 (WhileMove)(27716)']
+2025-10-16 19:39:49,969 - [SystemMonitor] - SystemMonitor - INFO - 内存: 444.61MB (2.76%) | 峰值: 444.61MB
+2025-10-16 19:39:49,969 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=4, QThread=0
+2025-10-16 19:39:49,969 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)']
+2025-10-16 19:39:54,970 - [SystemMonitor] - SystemMonitor - INFO - 内存: 439.45MB (2.73%) | 峰值: 444.61MB
+2025-10-16 19:39:54,971 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=4, QThread=0
+2025-10-16 19:39:54,971 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)']
+2025-10-16 19:39:59,985 - [SystemMonitor] - SystemMonitor - INFO - 内存: 477.39MB (2.96%) | 峰值: 477.39MB
+2025-10-16 19:39:59,985 - [SystemMonitor] - SystemMonitor - INFO - 线程: 总数=4, QThread=0
+2025-10-16 19:39:59,985 - [SystemMonitor] - SystemMonitor - DEBUG - 活动线程列表: ['MainThread(29064)', 'SystemMonitor(31676)', 'CameraWorkThread(28156)', 'Dummy-11(12616)']
+2025-10-16 19:40:00,687 - [MainThread] - SystemMonitor - DEBUG - 📍 CameraOperation.Stop_grabbing 被调用
+2025-10-16 19:40:00,888 - [MainThread] - SystemMonitor - INFO - 程序正常退出，退出码: 0
