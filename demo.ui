@@ -93,7 +93,7 @@ QTabWidget::pane {
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <property name="iconSize">
      <size>
@@ -1085,6 +1085,42 @@ QLineEdit:disabled {
       </property>
       <property name="text">
        <string>常温参数</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="xReverseButton">
+      <property name="geometry">
+       <rect>
+        <x>530</x>
+        <y>90</y>
+        <width>111</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>15</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>X轴反转</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="yReverseButton">
+      <property name="geometry">
+       <rect>
+        <x>530</x>
+        <y>150</y>
+        <width>111</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>15</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Y轴反转</string>
       </property>
      </widget>
     </widget>

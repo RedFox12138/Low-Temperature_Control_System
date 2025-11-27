@@ -92,7 +92,8 @@ class MainPage1(QMainWindow, Ui_MainWindow):
                  lineEdit_needleSetXdis, lineEdit_needleSetYdis,lineEdit_needleSetZdis,
                  lineEdit_microSetXdis, lineEdit_microSetYdis,lineEdit_Scripts,
                  plot_Label,
-                 Checkbox_lowTemp, Checkbox_highTemp):
+                 Checkbox_lowTemp, Checkbox_highTemp,
+                 xReverseButton,yReverseButton):
         super().__init__()
 
         self.plot_Label = plot_Label
@@ -248,6 +249,12 @@ class MainPage1(QMainWindow, Ui_MainWindow):
         Button_relay.clicked.connect(self.relay_IO)
         self.relay_flag = False
 
+        # 探针方向翻转按钮
+        self.xReverseButton = xReverseButton
+        self.yReverseButton = yReverseButton
+        xReverseButton.clicked.connect(self.reverse_x_direction)
+        yReverseButton.clicked.connect(self.reverse_y_direction)
+
         Button_pushing.clicked.connect(lambda: threading.Thread(target=self.Pushing).start())
         Button_pulling.clicked.connect(lambda: threading.Thread(target=self.Pulling).start())
 
@@ -282,6 +289,20 @@ class MainPage1(QMainWindow, Ui_MainWindow):
         elif self.Checkbox_highTemp.isChecked():
             set_high()
             logger.log("温度模式切换为：常温")
+
+    # 探针X轴方向翻转
+    def reverse_x_direction(self):
+        """翻转探针左右方向"""
+        self.needleuleft, self.needleright = self.needleright, self.needleuleft
+        logger.log(f"探针X轴方向已翻转: left={self.needleuleft}, right={self.needleright}")
+        print(f"X轴翻转后 - left={self.needleuleft}, right={self.needleright}")
+
+    # 探针Y轴方向翻转
+    def reverse_y_direction(self):
+        """翻转探针上下方向"""
+        self.needleup, self.needledown = self.needledown, self.needleup
+        logger.log(f"探针Y轴方向已翻转: up={self.needleup}, down={self.needledown}")
+        print(f"Y轴翻转后 - up={self.needleup}, down={self.needledown}")
 
     # 继电器的开关函数
     def relay_IO(self):
