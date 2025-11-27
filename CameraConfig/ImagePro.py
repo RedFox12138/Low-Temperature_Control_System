@@ -60,16 +60,16 @@ import numpy as np
 
 
 def template(video, x_dia=0, y_dia=0, equipment=0, sharpen_params=None):
-    """快速稳定的模板匹配版本（增强预处理）"""
+    """快速稳定的模板匹配版本（优化版）"""
     global templateNeedle, templateLight
 
-    # 1. 强制转换为灰度图像
+    # ================================= 步骤1：强制转换为灰度图像 =================================
     if len(video.shape) == 3:
         video_gray = cv2.cvtColor(video, cv2.COLOR_BGR2GRAY)
     else:
         video_gray = video
 
-    # 2. 获取模板并灰度化
+    # ================================= 步骤2：获取模板并灰度化 =================================
     template_img = templateLight if equipment else templateNeedle
     if template_img is None:
         return None, None, 0, 0
@@ -79,31 +79,51 @@ def template(video, x_dia=0, y_dia=0, equipment=0, sharpen_params=None):
     else:
         template_gray = template_img
 
-    # 3. 图像预处理（关键改进！）
-    video_gray, template_gray = preprocess_images(video_gray, template_gray, sharpen_params)
+    # ================================= 步骤3：轻量预处理（减少特征破坏）=================================
+    # 🔴 优化：减少预处理强度，避免破坏原始特征
+    # 仅在需要时进行轻微处理
+    video_processed = cv2.GaussianBlur(video_gray, (3, 3), 0)  # 轻微去噪
+    template_processed = cv2.GaussianBlur(template_gray, (3, 3), 0)
 
-    # 4. 使用多方法验证
-    methods = [cv2.TM_CCOEFF_NORMED, cv2.TM_CCORR_NORMED]
+    # ================================= 步骤4：多尺度模板匹配 =================================
+    # 🔴 优化：添加多尺度匹配，提高鲁棒性
+    scales = [0.9, 1.0, 1.1]  # 探针可能因距离略有缩放
     best_val = -1
     best_loc = None
-
-    for method in methods:
-        res = cv2.matchTemplate(video_gray, template_gray, method)
+    best_scale = 1.0
+    best_template = template_processed
+    
+    for scale in scales:
+        # 缩放模板
+        if scale != 1.0:
+            h, w = template_processed.shape
+            new_h, new_w = int(h * scale), int(w * scale)
+            if new_h < 10 or new_w < 10:
+                continue
+            scaled_template = cv2.resize(template_processed, (new_w, new_h))
+        else:
+            scaled_template = template_processed
+        
+        # 🔴 优化：只使用最可靠的 TM_CCOEFF_NORMED 方法
+        res = cv2.matchTemplate(video_processed, scaled_template, cv2.TM_CCOEFF_NORMED)
         _, max_val, _, max_loc = cv2.minMaxLoc(res)
-
+        
         if max_val > best_val:
             best_val = max_val
             best_loc = max_loc
+            best_scale = scale
+            best_template = scaled_template
 
-    # 5. 局部精细化搜索
-    if best_val > 0.9:
+    # ================================= 步骤5：局部精细化搜索 =================================
+    # 🔴 优化：降低阈值从 0.9 到 0.65，接受更多有效匹配
+    if best_val > 0.65:
         x, y = best_loc
-        h, w = template_gray.shape
+        h, w = best_template.shape
 
-        # 在匹配区域周围进行精细化搜索
-        if x > 5 and y > 5 and x + w < video_gray.shape[1] - 5 and y + h < video_gray.shape[0] - 5:
-            roi = video_gray[y - 5:y + h + 5, x - 5:x + w + 5]
-            refined_res = cv2.matchTemplate(roi, template_gray, cv2.TM_CCOEFF_NORMED)
+        # 局部精细化搜索（仅在安全范围内）
+        if x > 5 and y > 5 and x + w < video_processed.shape[1] - 5 and y + h < video_processed.shape[0] - 5:
+            roi = video_processed[y - 5:y + h + 5, x - 5:x + w + 5]
+            refined_res = cv2.matchTemplate(roi, best_template, cv2.TM_CCOEFF_NORMED)
             _, refined_val, _, refined_loc = cv2.minMaxLoc(refined_res)
 
             if refined_val > best_val:
@@ -111,12 +131,31 @@ def template(video, x_dia=0, y_dia=0, equipment=0, sharpen_params=None):
                 y = y - 5 + refined_loc[1]
                 best_val = refined_val
 
-        red_dot_x = x + w // 2 + x_dia
-        red_dot_y = y + h // 2 + y_dia
-        cv2.circle(video, (red_dot_x, red_dot_y), 5, (0, 0, 255), -1)  # 绘制红点
-        return red_dot_x, red_dot_y, template_img.shape[0], template_img.shape[1]
+        # 计算红点中心并绘制（使用原始模板尺寸）
+        orig_h, orig_w = template_gray.shape
+        red_dot_x = int(x + (w / best_scale) // 2 + x_dia)
+        red_dot_y = int(y + (h / best_scale) // 2 + y_dia)
+        
+        # 🔴 优化：根据匹配得分调整红点颜色（置信度可视化）
+        if best_val > 0.85:
+            color = (0, 255, 0)  # 绿色 - 高置信度
+        elif best_val > 0.75:
+            color = (0, 165, 255)  # 橙色 - 中等置信度
+        else:
+            color = (0, 0, 255)  # 红色 - 低置信度
+        
+        cv2.circle(video, (red_dot_x, red_dot_y), 5, color, -1)
+        
+        # 🔴 优化：始终显示匹配框和得分（帮助调试）
+        # cv2.rectangle(video, (x, y), (x + w, y + h), (0, 255, 0), 1)  # 绿色匹配框
+        # cv2.putText(video, f"{best_val:.2f}", (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 0), 1)
 
-    return None, None, 0, 0
+        return red_dot_x, red_dot_y, template_img.shape[0], template_img.shape[1]
+    else:
+        # 🔴 优化：显示实际匹配得分
+        cv2.putText(video, f"No Match (Score={best_val:.2f}, Need>0.65)", (10, 30), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        return None, None, 0, 0
 
 
 def preprocess_images(video_gray, template_gray, sharpen_params=None):
@@ -138,8 +177,8 @@ def preprocess_images(video_gray, template_gray, sharpen_params=None):
     template_gray = sharpen_image(template_gray, **sharpen_params)
 
     # 4. 边缘增强（可选，对于边缘明显的探针很有效）
-    video_gray = enhance_edges(video_gray)
-    template_gray = enhance_edges(template_gray)
+    # video_gray = enhance_edges(video_gray)
+    # template_gray = enhance_edges(template_gray)
 
     return video_gray, template_gray
 

@@ -16,7 +16,7 @@ from pymeasure.instruments.keithley import Keithley2450
 
 
 def main():
-    keithley = Keithley2450("USB0::0x05E6::0x2450::04595032::0::INSTR") # keithley2450地址
+    keithley = Keithley2450("USB0::0x05E6::0x2450::04514728::0::INSTR") # keithley2450地址
     keithley.reset() #keithley2450初始化sss
     time.sleep(0.1)
 
@@ -54,17 +54,17 @@ def main():
     V_set.extend(np.arange(0.65*Vmax, Vmax, s2))
 
 # 从Vmax减小到0.2*Vmax（步长为s3）
-    V_set.extend(np.arange(Vmax, 0.2*Vmax, -s3))
+    V_set.extend(np.arange(Vmax, 0.19*Vmax, -s3))
 
 # 从0.2*Vmax减小到0（步长为s4）
-    V_set.extend(np.arange(0.2*Vmax, 0.08*Vmax, -s4))
+    V_set.extend(np.arange(0.19*Vmax, 0.09*Vmax, -s4))
 
-    V_set.extend(np.arange(0.08*Vmax, 0, -s3))
+    V_set.extend(np.arange(0.09*Vmax, 0, -s3))
 # 从0减小到-0.5*Vmax（步长为s1）
-    V_set.extend(np.arange(0, -0.6*Vmax, -s1))
+    V_set.extend(np.arange(0, -0.65*Vmax, -s1))
 
 # 从-0.5*Vmax减小到-Vmax（步长为s2）
-    V_set.extend(np.arange(-0.6*Vmax, -Vmax, -s2))
+    V_set.extend(np.arange(-0.65*Vmax, -Vmax, -s2))
 
 # 从-Vmax增大到-0.2*Vmax（步长为s3）
     V_set.extend(np.arange(-Vmax, 0, s3))

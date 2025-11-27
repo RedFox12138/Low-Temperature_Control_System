@@ -149,8 +149,8 @@ class MainPage1(QMainWindow, Ui_MainWindow):
         self.microright = -1
 
         # 探针移动方向
-        self.needleup = 0
-        self.needledown = 1
+        self.needleup = 1
+        self.needledown = 0
         self.needleuleft = 2
         self.needleright = 3
 
@@ -335,6 +335,9 @@ class MainPage1(QMainWindow, Ui_MainWindow):
             return False
 
     def update_frame(self):
+        # 🔴 声明全局变量（在函数开始处）
+        global red_dot_x, red_dot_y
+        
         try:
             self._frame_idx += 1
 
@@ -346,7 +349,6 @@ class MainPage1(QMainWindow, Ui_MainWindow):
             if MainPage1.obj_cam_operation.buf_grab_image_size > 0 and stFrameInfo:
                 if stFrameInfo.nWidth > 0 and stFrameInfo.nHeight > 0 and stFrameInfo.nFrameLen > 0:
                     try:
-                        global red_dot_x, red_dot_y
 
                         # 从保存缓冲区复制数据，使用锁防止抓图线程写入过程中发生竞态
                         with MainPage1.obj_cam_operation.buf_lock:
@@ -743,13 +745,33 @@ class MainPage1(QMainWindow, Ui_MainWindow):
         self.x_dia = mouseX - roi_center_x
         self.y_dia = mouseY - roi_center_y
 
+        # 🔴 修复：裁剪并保存模板图片
+        cropped_template = param[y:y + h, x:x + w]
+        
+        # 根据设备类型保存不同的模板文件
+        if MainPage1.equipment == 0:
+            template_filename = 'templateNeedle.png'
+        else:
+            template_filename = 'templateLight.png'
+        
+        cv2.imwrite(template_filename, cropped_template)
+        print(f"模板图片已保存为: {template_filename}")
 
         cv2.destroyWindow("Select Needle Template")
 
+        # 保存偏移量
         with open('dia' + str(MainPage1.equipment) + '.txt', 'w', encoding='utf-8') as f:
             f.write(f"{self.x_dia},{self.y_dia}")
 
         print(f"偏移量已保存: x_dia={self.x_dia}, y_dia={self.y_dia}")
+        
+        # 🔴 立即重新加载模板
+        try:
+            load_templates()
+            print(f"模板已重新加载")
+        except Exception as e:
+            print(f"重新加载模板失败: {e}")
+        
         return True
 
     def select_pad_template(self):
@@ -1146,22 +1168,22 @@ class MainPage1(QMainWindow, Ui_MainWindow):
 
     def move_probe_up(self):
         threading.Thread(target=WhileMove,
-                         args=(0, self.indicator,MainPage1.equipment, MainPage1.needle_distanceY)).start()
+                         args=(self.needleup, self.indicator,MainPage1.equipment, MainPage1.needle_distanceY)).start()
         logger.log("探针往上移动了")
 
     def move_probe_down(self):
         threading.Thread(target=WhileMove,
-                         args=(1, self.indicator,MainPage1.equipment, MainPage1.needle_distanceY)).start()
+                         args=(self.needledown, self.indicator,MainPage1.equipment, MainPage1.needle_distanceY)).start()
         logger.log("探针往下移动了")
 
     def move_probe_left(self):
         threading.Thread(target=WhileMove,
-                         args=(2, self.indicator,MainPage1.equipment, MainPage1.needle_distanceX)).start()
+                         args=(self.needleuleft, self.indicator,MainPage1.equipment, MainPage1.needle_distanceX)).start()
         logger.log("探针往左移动了")
 
     def move_probe_right(self):
         threading.Thread(target=WhileMove,
-                         args=(3, self.indicator,MainPage1.equipment, MainPage1.needle_distanceX)).start()
+                         args=(self.needleright, self.indicator,MainPage1.equipment, MainPage1.needle_distanceX)).start()
         logger.log("探针往右移动了")
 
     from PyQt5.QtWidgets import QMessageBox
