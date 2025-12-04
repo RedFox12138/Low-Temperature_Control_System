@@ -11,7 +11,7 @@ from DailyLogger import DailyLogger
 from Position import move_to_Z, getPosition, move_to_target
 from SerialLock import SerialLock
 from demo import Ui_MainWindow
-from SerialPage import SIM928ConnectionThread, RelayConnectionThread
+from SerialPage import SIM928ConnectionThread, RelayConnectionThread, NeedelConnectionThread
 from StopClass import StopClass
 
 # 移除对 tkinter 的依赖，避免与 PyQt 事件循环冲突
@@ -233,6 +233,7 @@ class locationClass(QMainWindow, Ui_MainWindow):
             self.ax.set_ylim(y_min - margin_y, y_max + margin_y)
             self.ax.set_aspect('equal')  # 保持比例一致
             self.ax.invert_xaxis()
+            self.ax.invert_yaxis()  # 翻转Y轴，使Dev_0在左上角
             # 修改后（将标签移到坐标轴外）
             info_text = self.ax.text(
                 -0.36, 1.05,  # x负方向偏移25%，y正方向偏移5%
@@ -356,6 +357,11 @@ class locationClass(QMainWindow, Ui_MainWindow):
                         continue
 
                     time.sleep(0.5)  # 等待 1 秒，确保探针稳定
+                    anc = NeedelConnectionThread.anc
+                    anc.write('[ch1:0]'.encode())
+                    time.sleep(0.1)  # 等待 1 秒，确保探针稳定
+
+
 
                     current = keithley.current
                     logger.log("本次按压完成后的电流是",str(current))

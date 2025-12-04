@@ -258,7 +258,7 @@ def move_to_target(x, y,indicatorLight):
         x_current, y_current,_ = getPosition(Only_XY=True)
         time.sleep(0.2)
 
-    while  abs(y_current - y) > 0.01 :
+    while  abs(y_current - y) > 0.015 :
         if StopClass.stop_num == 1:
             StopClass.stop_num = 0
             anc = NeedelConnectionThread.anc
@@ -292,7 +292,7 @@ def move_to_target(x, y,indicatorLight):
                     move('-Y', abs(y_diff) / step_per_unit * XY_k_2, flag)
                 _, y_current,_ = getPosition(Only_XY=True)
                 time.sleep(0.2)
-    while abs(x_current - x) > 0.01:
+    while abs(x_current - x) > 0.015:
         if StopClass.stop_num == 1:
             StopClass.stop_num = 0
             anc = NeedelConnectionThread.anc
