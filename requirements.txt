@@ -1,0 +1,28 @@
+# QTneedle 低温控制系统 - 依赖包列表
+# 使用命令安装: pip install -r requirements.txt
+
+# PyQt5 - GUI框架
+PyQt5>=5.15.0
+
+# 图像处理
+numpy>=1.19.0
+opencv-python>=4.5.0
+Pillow>=8.0.0
+
+# 串口通信
+pyserial>=3.5
+pyvisa>=1.11.0
+pyvisa-py>=0.5.0
+
+# 仪器控制
+pymeasure>=0.9.0
+
+# 科学计算
+scipy>=1.5.0
+matplotlib>=3.3.0
+
+# 系统监控
+psutil>=5.8.0
+
+# 其他工具
+python-dateutil>=2.8.0
