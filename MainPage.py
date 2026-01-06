@@ -1315,19 +1315,38 @@ class MainPage1(QMainWindow, Ui_MainWindow):
 
     # 计算距离并移动探针
     def move_probe_to_target(self, target_x, target_y):
+        from Scan.ScanXY import ScanX, ScanY
+        
         # 根据全局配置选择参数
         if is_low():
             distance_weight = 50  # 低温
             error = 20
             sleep_time = 0.2 #这里本来是0.5，但是为了加快速度改成0.2
+            error_Scan = 20
+            scan_range_min = -150
+            scan_range_max = 150
         else:
             distance_weight = 10  # 常温
-            error = 20
+            error = 100
             sleep_time = 0.1
+            error_Scan = 30
+            scan_range_min = 0
+            scan_range_max = 75
 
         self.allow_alignment = False  # 禁用对齐
         self.indicator.setStyleSheet(MainPage1.get_stylesheet(True))
+        
+        # ========== 预备步骤：将扫描台移动到中间位置 ==========
+        scan_center_x = (scan_range_min + scan_range_max) / 2.0
+        scan_center_y = (scan_range_min + scan_range_max) / 2.0
+        logger.log(f"预先将扫描台移动到中间位置: X={scan_center_x:.2f}, Y={scan_center_y:.2f}")
+        ScanX(scan_center_x, is_low=is_low())
+        ScanY(scan_center_y, is_low=is_low())
+        time.sleep(0.5)  # 等待扫描台稳定
+        
         probe_x, probe_y = self.get_probe_position()
+        
+        # ========== 第一阶段：粗调 - 使用机械臂移动（距离 > error）==========
         distance = np.sqrt((target_x - probe_x) ** 2) *distance_weight
         while distance>=error:
             if StopClass.stop_num == 1:
@@ -1359,6 +1378,123 @@ class MainPage1(QMainWindow, Ui_MainWindow):
             time.sleep(sleep_time)
             probe_x, probe_y = self.get_probe_position()
             distance = np.sqrt((target_y - probe_y) ** 2)*distance_weight
+
+        # ========== 第二阶段：精调 - 使用扫描台二分法（error > 距离 > error_Scan）==========
+        probe_x, probe_y = self.get_probe_position()
+        distance_x = abs(target_x - probe_x) * distance_weight
+        distance_y = abs(target_y - probe_y) * distance_weight
+        
+        # 判断是否需要进入精调模式（任一轴满足条件即可）
+        need_fine_tune = (error > distance_x > error_Scan) or (error > distance_y > error_Scan)
+        
+        if need_fine_tune:
+            logger.log(f"进入扫描台二分法精调模式，X轴距离: {distance_x:.2f}, Y轴距离: {distance_y:.2f}")
+            
+            # 初始化扫描台搜索范围（扫描台已经在中间位置）
+            scan_x_min = scan_range_min
+            scan_x_max = scan_range_max
+            scan_y_min = scan_range_min
+            scan_y_max = scan_range_max
+            
+            # 当前扫描台位置（已经在中间）
+            current_scan_x = scan_center_x
+            current_scan_y = scan_center_y
+            
+            max_iterations = 15
+            
+            # ========== X轴二分法循环 ==========
+            if distance_x > error_Scan:
+                logger.log(f"开始X轴二分法调整，初始距离: {distance_x:.2f}")
+                iteration_x = 0
+                
+                while distance_x > error_Scan and iteration_x < max_iterations:
+                    if StopClass.stop_num == 1:
+                        break
+                    
+                    iteration_x += 1
+                    
+                    # 重新获取探针位置
+                    probe_x, probe_y = self.get_probe_position()
+                    if probe_x is None:
+                        logger.log("X轴调整时模板匹配失败")
+                        break
+                    
+                    # 计算X轴误差
+                    pixel_error_x = target_x - probe_x
+                    distance_x = abs(pixel_error_x) * distance_weight
+                    
+                    if distance_x <= error_Scan:
+                        logger.log(f"X轴已达到精度要求，距离: {distance_x:.2f}")
+                        break
+                    
+                    # X轴二分法调整
+                    # x正方向在图像中向下，所以当target_x > probe_x时，需要增加scan_x
+                    if pixel_error_x > 0:  # 目标在探针下方，需要增加scan_x
+                        scan_x_min = current_scan_x
+                    else:  # 目标在探针上方，需要减少scan_x
+                        scan_x_max = current_scan_x
+                    
+                    # 更新扫描台X位置
+                    new_scan_x = (scan_x_min + scan_x_max) / 2.0
+                    ScanX(new_scan_x, is_low=is_low())
+                    current_scan_x = new_scan_x
+                    time.sleep(0.3)
+                    
+                    # 移动后重新获取位置并计算距离
+                    probe_x, probe_y = self.get_probe_position()
+                    if probe_x is not None:
+                        distance_x = abs(target_x - probe_x) * distance_weight
+                        logger.log(f"X轴迭代 {iteration_x}: 扫描台X={current_scan_x:.2f}, 探针X={probe_x:.1f}, 距离={distance_x:.2f}")
+                
+                logger.log(f"X轴二分法完成，最终距离: {distance_x:.2f}")
+            
+            # ========== Y轴二分法循环 ==========
+            if distance_y > error_Scan:
+                logger.log(f"开始Y轴二分法调整，初始距离: {distance_y:.2f}")
+                iteration_y = 0
+                
+                while distance_y > error_Scan and iteration_y < max_iterations:
+                    if StopClass.stop_num == 1:
+                        break
+                    
+                    iteration_y += 1
+                    
+                    # 重新获取探针位置
+                    probe_x, probe_y = self.get_probe_position()
+                    if probe_y is None:
+                        logger.log("Y轴调整时模板匹配失败")
+                        break
+                    
+                    # 计算Y轴误差
+                    pixel_error_y = target_y - probe_y
+                    distance_y = abs(pixel_error_y) * distance_weight
+                    
+                    if distance_y <= error_Scan:
+                        logger.log(f"Y轴已达到精度要求，距离: {distance_y:.2f}")
+                        break
+                    
+                    # Y轴二分法调整
+                    # y正方向在图像中向右，所以当target_y > probe_y时，需要增加scan_y
+                    if pixel_error_y > 0:  # 目标在探针右方，需要增加scan_y
+                        scan_y_min = current_scan_y
+                    else:  # 目标在探针左方，需要减少scan_y
+                        scan_y_max = current_scan_y
+                    
+                    # 更新扫描台Y位置
+                    new_scan_y = (scan_y_min + scan_y_max) / 2.0
+                    ScanY(new_scan_y, is_low=is_low())
+                    current_scan_y = new_scan_y
+                    time.sleep(0.3)
+                    
+                    # 移动后重新获取位置并计算距离
+                    probe_x, probe_y = self.get_probe_position()
+                    if probe_y is not None:
+                        distance_y = abs(target_y - probe_y) * distance_weight
+                        logger.log(f"Y轴迭代 {iteration_y}: 扫描台Y={current_scan_y:.2f}, 探针Y={probe_y:.1f}, 距离={distance_y:.2f}")
+                
+                logger.log(f"Y轴二分法完成，最终距离: {distance_y:.2f}")
+            
+            logger.log(f"扫描台二分法精调全部完成，最终 X轴距离: {distance_x:.2f}, Y轴距离: {distance_y:.2f}")
 
         self.allow_alignment = True  # 重新允许对齐
         self.indicator.setStyleSheet(MainPage1.get_stylesheet(False))

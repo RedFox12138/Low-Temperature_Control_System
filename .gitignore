@@ -1,0 +1,78 @@
+# 忽略所有文件
+*
+
+# 但保留 Python 脚本
+!*.py
+
+# 保留 .gitignore 本身
+!.gitignore
+
+# 保留目录结构（Git 需要目录）
+!*/
+
+# 忽略 Python 字节码和缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# 忽略虚拟环境
+venv/
+env/
+ENV/
+.venv
+
+# 忽略 IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 忽略构建产物
+build/
+dist/
+*.egg-info/
+*.egg
+
+# 忽略日志和临时文件
+*.log
+*.txt
+*.tmp
+*.temp
+
+# 忽略数据和结果文件
+*.mat
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.gif
+*.ico
+
+# 忽略 UI 和资源文件
+*.ui
+*.qrc
+*.spec
+
+# 忽略批处理和脚本（非 Python）
+*.bat
+*.sh
+*.ps1
+
+# 忽略 Markdown 文档
+*.md
+
+# 忽略配置文件
+*.ini
+*.cfg
+*.conf
+*.json
+*.xml
+*.yaml
+*.yml
+
+# 忽略需求文件（如果不想跟踪）
+# 如果需要跟踪 requirements.txt，可以取消下面的注释
+# !requirements.txt

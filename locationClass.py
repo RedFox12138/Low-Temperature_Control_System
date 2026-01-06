@@ -321,8 +321,18 @@ class locationClass(QMainWindow, Ui_MainWindow):
                 move_to_target(target_x, target_y,self.indicator)
                 time.sleep(2)
 
-                # 🔴 优化：每3个点才进行一次模板匹配（降低内存压力）
-                skip_template = (i % 2 != 0) and i > 0  # 跳过某些点的模板匹配
+                # 🔴 检查内存压力，决定是否跳过模板匹配
+                import psutil
+                import gc
+                skip_template = False
+                try:
+                    mem_mb = psutil.Process().memory_info().rss / 1024 / 1024
+                    if mem_mb > 600:  # 超过 600MB
+                        logger.log(f'[WARNING] 内存压力过大 ({mem_mb:.0f}MB)，跳过第{i}个点的模板匹配')
+                        skip_template = True
+                        gc.collect()  # 强制垃圾回收
+                except Exception as e:
+                    logger.log(f'[WARNING] 内存检查失败: {e}')
                 
                 if not skip_template:
                     #这里的template_error如果是true，说明模板匹配有问题，这个点就直接跳过，不匹配了
@@ -331,7 +341,6 @@ class locationClass(QMainWindow, Ui_MainWindow):
                         logger.log(f'该点模板匹配失败: x={target_x}, y={target_y}，跳过当前点的处理')
                         continue
                 else:
-                    logger.log(f'跳过模板匹配以降低内存压力（第{i}个点）')
                     time.sleep(0.5)  # 简单等待以确保稳定
 
 
